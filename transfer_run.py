@@ -1,5 +1,5 @@
 import pickle
-from crawl_transfer import *
+from Library.crawl_transfer import *
 
 leagues_name = ["premier", "laliga", "bundesliga", "serie_a", "ligue_1]
 leagues_5= [
