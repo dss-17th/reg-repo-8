@@ -8,7 +8,7 @@ import numpy as np
 
 def defence (url, sleep_time) :
     #open webdriver
-    driver = webdriver.Chrome('/Users/riversong/Desktop/Fastcampus/Coding/crawling/chromedriver')
+    driver = webdriver.Chrome('#chrome driver')
     driver.get(url)
 
     # click 'defensive' button
@@ -42,7 +42,7 @@ def defence (url, sleep_time) :
     return(df_defensive)
 def attack (url, sleep_time) :
     #open webdriver
-    driver = webdriver.Chrome('/Users/riversong/Desktop/Fastcampus/Coding/crawling/chromedriver')
+    driver = webdriver.Chrome('#chrome driver')
     driver.get(url)
 
     # click 'Offensive' button
@@ -76,7 +76,7 @@ def attack (url, sleep_time) :
     return(df_offensive)
 def midfield (url, sleep_time) :
     #open webdriver
-    driver = webdriver.Chrome('/Users/riversong/Desktop/Fastcampus/Coding/crawling/chromedriver')
+    driver = webdriver.Chrome('#chrome driver')
     driver.get(url)
 
     # click 'defensive' button
@@ -110,7 +110,7 @@ def midfield (url, sleep_time) :
     return(df_passing)
 def summary (url, sleep_time) :
     #open webdriver
-    driver = webdriver.Chrome('/Users/riversong/Desktop/Fastcampus/Coding/crawling/chromedriver')
+    driver = webdriver.Chrome('#chrome driver')
     driver.get(url)
 
     #click 'all players' button

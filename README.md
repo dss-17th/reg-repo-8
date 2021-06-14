@@ -1,7 +1,5 @@
 # 축구선수의 몸값 회귀분석 (송강, 이승주)
----
 ## < 팀 구성 >
----
 1. 송강
   - whoscored.com 데이터 크롤링
   - 골키퍼, 수비수에 대한 회귀분석
@@ -12,7 +10,6 @@
   - 전처리 및 모델링
 
 ## < 목표 >
----
 > ## 1. 분석의 목적
   평소 흥미가 있는 주제인 축구라는 분야에서 축구선수에게 책정된 몸값이 어떠한 과정을 거쳐 정해지는지 검증하는 것
 
@@ -26,7 +23,6 @@
     - source site 2: https://www.whoscored.com/
 
 ## <결론>
----
 - 선수들의 통계치를 나타낸 데이터는 몸값과 뚜렷한 선형적 관계를 가지지 않음.
 - 포지션별 세분화된 데이터에서도 유의미한 예측은 어려움.
 - 개인 수상 커리어 또한 몸값에 큰 영향을 미치지 않음.
@@ -40,7 +36,6 @@
 그 중 600명의 공격수 데이터
 <img width="1004" alt="스크린샷 2021-06-14 오후 7 37 59" src="https://user-images.githubusercontent.com/53620138/121879637-0e870080-cd48-11eb-94a7-4cd68ebdbfbe.png">
 
----
 
 > 공격수 포지션의 market_value와 다른 컬럼들간의 상관관계 히트맵
 
@@ -49,3 +44,7 @@
 >  Nike, adidas, Puma 외의 class들을 others로 grouping  
 
 <img width="1009" alt="스크린샷 2021-06-14 오후 7 41 27" src="https://user-images.githubusercontent.com/53620138/121880064-881eee80-cd48-11eb-81b4-c4689332a696.png">
+
+> foot, position, outfitter 의 분포와 boxplot
+<img width="997" alt="스크린샷 2021-06-14 오후 7 47 00" src="https://user-images.githubusercontent.com/53620138/121880720-4e021c80-cd49-11eb-9a01-6595e9dfb457.png">
+<img width="1015" alt="스크린샷 2021-06-14 오후 7 47 50" src="https://user-images.githubusercontent.com/53620138/121880832-71c56280-cd49-11eb-9904-2f2a0887b07b.png">
