@@ -48,3 +48,4 @@
 > foot, position, outfitter 의 분포와 boxplot
 <img width="997" alt="스크린샷 2021-06-14 오후 7 47 00" src="https://user-images.githubusercontent.com/53620138/121880720-4e021c80-cd49-11eb-9a01-6595e9dfb457.png">
 <img width="1015" alt="스크린샷 2021-06-14 오후 7 47 50" src="https://user-images.githubusercontent.com/53620138/121880832-71c56280-cd49-11eb-9904-2f2a0887b07b.png">
+
