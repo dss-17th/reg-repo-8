@@ -81,7 +81,7 @@
     - 종속변수 : log1p Scaler
 <img width="1093" alt="스크린샷 2021-06-15 오후 5 07 26" src="https://user-images.githubusercontent.com/53620138/122016640-2f109280-cdfc-11eb-80d2-f5c4de40e0fd.png">
 
-#### 6. Pipeline을 이용한 Model 생성
+#### 5. Pipeline을 이용한 Model 생성
     - ploynomialFeatures을 이용한 다향회귀 진행 : 삼차항
     - pipeline : PolynomialFeatures > StandardScaler > RandomForestRegressor
     - 범주형 : 더미변수화
@@ -91,7 +91,7 @@
 <img width="1090" alt="스크린샷 2021-06-15 오후 5 10 41" src="https://user-images.githubusercontent.com/53620138/122017168-b231e880-cdfc-11eb-89b4-a2e0901f74bf.png">
 
 
-#### 7. 최종 모델 선정 및 OLS객체를 통한 통계분석
+#### 6. 최종 모델 선정 및 OLS객체를 통한 통계분석
     - model : LinearRegression
     - 범주형 : 더미변수화
     - 수치형 : Standard Scaler
