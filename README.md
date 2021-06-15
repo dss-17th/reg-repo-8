@@ -1,7 +1,5 @@
 # 축구선수의 몸값 회귀분석 (송강, 이승주)
----
 ## < 팀 구성 >
----
 1. 송강
   - whoscored.com 데이터 크롤링
   - 골키퍼, 수비수에 대한 회귀분석
@@ -12,7 +10,6 @@
   - 전처리 및 모델링
 
 ## < 목표 >
----
 > ## 1. 분석의 목적
   평소 흥미가 있는 주제인 축구라는 분야에서 축구선수에게 책정된 몸값이 어떠한 과정을 거쳐 정해지는지 검증하는 것
 
@@ -26,16 +23,18 @@
     - source site 2: https://www.whoscored.com/
 
 ## <결론>
----
 - 선수들의 통계치를 나타낸 데이터는 몸값과 뚜렷한 선형적 관계를 가지지 않음.
 - 포지션별 세분화된 데이터에서도 유의미한 예측은 어려움.
 - 개인 수상 커리어 또한 몸값에 큰 영향을 미치지 않음.
 
 > ### 1. 데이터 전처리 설명
-
+--- 
 실제로 가져올 수 있고 다룰 수 있는 수준의 데이터를 유럽 5대리그(스페인,영국,프랑스,이탈리아,독일)로 설정했습니다.  
 또한 whoscored.com과 transfermarkt.com에 올라와 있는 선수데이터가 약간 상이한 부분이 있어 소속팀과 선수이름으로 merge하여  
 약 2000명의 선수 데이터셋을 구성했습니다.
+
+--- 
+#### 수집된 데이터에 골키퍼 관련 데이터가 극히 적어 모델링에서 제외했습니다
 
 <img width="974" alt="스크린샷 2021-06-14 오후 7 30 23" src="https://user-images.githubusercontent.com/53620138/121878706-fd89bf80-cd46-11eb-9bea-add61ca6a9ee.png">
 그 중 600명의 공격수 데이터
@@ -83,7 +82,7 @@
     - 종속변수 : log1p Scaler
 <img width="1093" alt="스크린샷 2021-06-15 오후 5 07 26" src="https://user-images.githubusercontent.com/53620138/122016640-2f109280-cdfc-11eb-80d2-f5c4de40e0fd.png">
 
-#### 6. Pipeline을 이용한 Model 생성
+#### 5. Pipeline을 이용한 Model 생성
     - ploynomialFeatures을 이용한 다향회귀 진행 : 삼차항
     - pipeline : PolynomialFeatures > StandardScaler > RandomForestRegressor
     - 범주형 : 더미변수화
@@ -93,7 +92,7 @@
 <img width="1090" alt="스크린샷 2021-06-15 오후 5 10 41" src="https://user-images.githubusercontent.com/53620138/122017168-b231e880-cdfc-11eb-89b4-a2e0901f74bf.png">
 
 
-#### 7. 최종 모델 선정 및 OLS객체를 통한 통계분석
+#### 6. 최종 모델 선정 및 OLS객체를 통한 통계분석
     - model : LinearRegression
     - 범주형 : 더미변수화
     - 수치형 : Standard Scaler
