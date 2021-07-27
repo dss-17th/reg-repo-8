@@ -1,4 +1,6 @@
 from Library.whoscored_crawling import *
+
+
 # 수집하고자 하는 5대리그의 데이터 주소
 urls = [
     'https://1xbet.whoscored.com/Regions/206/Tournaments/4/Seasons/8321/Stages/18851/PlayerStatistics/Spain-LaLiga-2020-2021',
