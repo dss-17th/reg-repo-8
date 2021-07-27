@@ -1,11 +1,11 @@
-from selenium import webdriver
-from pandas.io.html import read_html
 import time
 import pandas as pd
 import numpy as np
+from selenium import webdriver
+from pandas.io.html import read_html
+
 
 # whoscored.com selenium crawling code
-
 def defence (url, sleep_time) :
     #open webdriver
     driver = webdriver.Chrome('#chrome driver')
