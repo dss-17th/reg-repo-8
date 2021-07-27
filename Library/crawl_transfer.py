@@ -110,7 +110,6 @@ def crawl_transfer_stats(player_links):
         except:
             outfitter = None
 
-
         # 크롤링정보를 list의 dictionary형태로 dataframe 생성
         data = {
             'name': name, 'market_value': market_value, 'app': app, 'conceded_goals': conceded_goals,
