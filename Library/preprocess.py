@@ -8,7 +8,6 @@ Relegation = ['Fulham FC','West Bromwich Albion','Sheffield United','SD Eibar', 
              'SV Werder Bremen','FC Schalke 04','Benevento Calcio','FC Crotone','Parma Calcio 1913',
              'Dijon FCO', 'Nîmes Olympique']
 
-
 def convert_club(club):
     if club in Champions:
         score = 3
@@ -18,6 +17,7 @@ def convert_club(club):
         score = 0
     else:
         score = 1
+    
     return score
 
 
