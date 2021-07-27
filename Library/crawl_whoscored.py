@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import pickle
 
-# whoscored.com selenium crawling code
 
+# whoscored.com selenium crawling code
 def defence (url, sleep_time) :
     #open webdriver
     driver = webdriver.Chrome('/Users/riversong/Desktop/Fastcampus/Coding/crawling/chromedriver')
