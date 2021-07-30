@@ -144,7 +144,231 @@ row : 20/21시즌 개개인의 축구선수에 대한 정보
 ---
 
 ## 3. 과정
-# 여기에 코드들에 대한 설명과 모델링 과정 설명
+### 3-1. 베이스라인 분석에 대한 기술적 Summary
+
+<br/>
+
+#### **modeling 성능평가에 사용된 함수**
+```
+from patsy import dmatrix
+from sklearn import metrics
+from sklearn.metrics import r2_score
+from sklearn.model_selection import KFold
+
+
+# OLS 모델을 만든 후 5번의 교차검증을 통해 r2-score, mse, rmse의 평균값을 출력해주는 함수
+def get_scores(df, formula, inplace=False, get_model=False, show_dfX=False):
+    
+    scores = np.zeros(5)
+    mses = np.zeros(5)
+    rmses = np.zeros(5)
+    cv = KFold(5, shuffle=True, random_state=3)
+    for i, (idx_train, idx_test) in enumerate(cv.split(df)):
+        
+        df_X = dmatrix(formula, df, return_type='dataframe')
+        df_y = df['market_value']
+        
+        X_train, X_test = df_X.iloc[idx_train], df_X.iloc[idx_test]
+        y_train, y_test = df_y.iloc[idx_train], df_y.iloc[idx_test]
+
+        model = sm.OLS(y_train, X_train).fit()
+        pred = model.predict(X_test)
+        
+        mse = metrics.mean_squared_error(y_test, pred)
+        rmse = np.sqrt(metrics.mean_squared_error(y_test, pred))
+        r_squared = r2_score(y_test, pred)
+        
+        scores[i] = r_squared
+        mses[i] = mse
+        rmses[i] = rmse
+    
+    avg_r_score = np.mean(scores).round(4)
+    avg_mse = np.mean(mses).round(4)
+    avg_rmse = np.mean(rmses).round(4)
+    
+    print("r-score :", avg_r_score)
+    print("mse :", avg_mse)
+    print("rmse :", avg_rmse)
+    
+    if inplace:
+        return [avg_r_score, avg_mse, avg_rmse]
+    
+    if get_model:
+        return model, [avg_r_score, avg_mse, avg_rmse]
+    
+    if show_dfX:
+        return df_X, [avg_r_score, avg_mse, avg_rmse]
+
+
+# 두 모델의 성능을 비교해주는 함수
+def compare_scores(prev_score, curr_score):
+    print("r-score 변화량: ", (curr_score[0] - prev_score[0]).round(4))
+    print("mse 변화량 :", (curr_score[1] - prev_score[1]).round(4))
+    print("rmse 변화량 :", (curr_score[2] - prev_score[2]).round(4))
+```
+- get_scores
+  - dmatrix를 이용해 문자열로 OLS 회귀모델 생성 후 5번의 교차검증을 통해 성능에 대한 결과를 도출하는 함수
+  - inplace, get_model, show_dfX 파라미터를 통해 성능과 모델객체, 독립변수셋을 return받을 수 있음
+
+- compare_scores
+  - 두 모델간 성능을 비교해 성능의 변화량을 도출하여 모델을 비교해주는 함수
+
+---
+<br/>
+
+#### **VIF와 p-value를 고려한 변수 제거**
+```
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+dfX, score_7 = get_scores(model_df, formula, show_dfX=True)
+
+vif_df = pd.DataFrame()
+vif_df["VIF Factor"] = [variance_inflation_factor(dfX.values, i) for i in range(dfX.shape[1])]
+vif_df["features"] = dfX.columns
+```
+- 각 독립변수에 대한 VIF score 도출 후 데이터프레임화
+```
+vif_df = vif_df.sort_values('VIF Factor', ascending=False).reset_index(drop=True)
+vif_df[vif_df['VIF Factor'] > 5]
+```
+- VIF score가 5보다 큰 독립변수 추출 후 p-value값을 고려 후 불필요한 변수 정의 및 제거
+
+---
+<br/>
+
+#### **KMeans를 사용해 제거된 독립변수에 대한 Clustering**
+```
+remove_df = players_df.copy()
+remove_df = remove_df[["position", "foot", "Rating", "PS", "Drb", "Assists", "Clear", "Off"]]
+```
+- 불필요한 변수에 대한 데이터프레임화
+```
+remove_df = pd.get_dummies(remove_df, columns=['position', 'foot'], drop_first=True)
+```
+- 범주형 변수에 대한 더미변수화
+```
+from sklearn.preprocessing import StandardScaler
+
+ss = StandardScaler().fit_transform(remove_df.iloc[:, :6].values)
+remove_df[["Rating", "PS", "Drb", "Assists", "Clear", "Off"]] = ss
+```
+- 연속형 변수에 대한 Standard Scaling
+```
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+
+
+distance = []
+for i in range(2, 15):
+    model = KMeans(n_clusters=i).fit(remove_df)
+    distance.append(model.inertia_)
+
+sil = []
+for i in range(2, 15):
+    model = KMeans(n_clusters=i).fit(remove_df)
+    sil.append(silhouette_score(remove_df, model.labels_))
+```
+<img width="978" alt="스크린샷 2021-07-30 오후 6 12 57" src="https://user-images.githubusercontent.com/80459520/127630818-c492803f-e3c8-4002-9713-d7be3de47b34.png">
+
+- 군집의 개수를 2 ~ 15개로 한 뒤 distance와 실루엣계수로 최적의 군집 수 파악
+- distance가 급격히 꺾이는 구간은 보이지 않고 군집 수가 2일때 실루엣계수가 가장 높으므로 2개의 군집으로 라벨링 진행
+```
+from sklearn.decomposition import PCA
+
+model = KMeans(n_clusters=2).fit(remove_df)
+
+pca = PCA(n_components=2)
+datas = pca.fit_transform(remove_df)
+pca_df = pd.DataFrame(datas, columns=["PC1", "PC2"])
+pca_df['label'] = model.labels_
+```
+- 분류성능 확인을 위한 PCA 차원축소 후 시각화
+
+<img width="330" alt="스크린샷 2021-07-30 오후 6 23 44" src="https://user-images.githubusercontent.com/80459520/127632250-7bced16e-9dd0-4c86-b55f-2ae7daf666b4.png">
+
+---
+<br/>
+
+#### **최종모델에 대한 모델링**
+```
+model_df = players_df.copy()
+
+model_df['second_yell'] = model_df['second_yell'].astype('int')
+model_df['red_card'] = model_df['red_card'].astype('int')
+model_df['out'] = model_df['red_card'] + model_df['second_yell']
+model_df.drop(columns=['red_card', 'second_yell', "outfitter"], inplace=True)
+
+model_df['market_value'] = np.log1p(model_df['market_value'])
+model_df['club'] = model_df['club'].apply(convert_club)
+
+remove_ls = remove_df.columns[:6].tolist() + ['position', 'foot']
+model_df.drop(columns=remove_ls, inplace=True)
+model_df['label'] = model.labels_
+```
+- 모델링을 위한 데이터셋 전처리
+  - 불필요한 변수를 제거한 후 그 변수들의 Clustering Label에 대한 값을 label이라는 변수값으로 대체
+```
+formula = "+".join([f"scale({var})" for var in model_df.columns.tolist()[1:-1]]) + "+C(label)"
+
+model_8, score_8 = get_scores(model_df, formula, get_model=True)
+compare_scores(score_7, score_8)
+```
+- 독립변수 전처리 방식에 대한 문자열 생성
+- 모델링 후 model객체와 성능 return
+- 전 모델객체와의 성능비교
+
+---
+<br>
+
+#### **아노바검정을 통한 모델간 비교**
+```
+sm.stats.anova_lm(model_8, model_7)
+```
+<img width="397" alt="스크린샷 2021-07-30 오후 6 38 12" src="https://user-images.githubusercontent.com/80459520/127634145-e9486228-6c3d-42c5-9a7d-b7458aa860a7.png">
+
+- 전 모델과 아노바검정의 p-value이 유의수준보다 낮기에 귀무가설을 기각하므로 두 모델은 다르다고 할 수 있고, 성능적인 부분에서 최종모델(model_8)이 높기에 모델 채택
+
+---
+<br/>
+
+#### **RandomForestRegressor & GridSearch**
+```
+from sklearn.model_selection import train_test_split
+
+df_X = dmatrix(formula, model_df, return_type='dataframe')
+df_y = model_df['market_value']
+
+X_train, X_test, y_train, y_test = train_test_split(df_X, df_y, test_size=0.3, random_state=3)
+```
+- 최종모델의 데이터셋을 사용해 train, test 데이터셋으로 split
+```
+from sklearn.model_selection import GridSearchCV
+
+random_params = {'bootstrap': [True, False],
+ 'max_depth': [1,3,5,7,9],
+ 'max_features': ['auto', 'sqrt'],
+ 'min_samples_leaf': [1, 2, 4],
+ 'min_samples_split': [2, 5, 10],
+ 'n_estimators': [200, 400, 600, 800]}
+
+randomfr_tuning_model = GridSearchCV(
+    randomfr_model,
+    param_grid=random_params,
+    scoring='neg_mean_squared_error',
+    cv=3,
+    verbose=3)
+
+randomfr_tuning_model.fit(X_train,y_train)
+
+randomfr_tuning_model.best_params_
+```
+- random forest regressor의 몇몇 파라미터들에 다양한 값을 통한 GridSearch후 Best Parameters 도출
+
+---
+---
+<br/>
+
+### 3-2. 세분화 분석에 대한 기술적 Summary
 
 > ### 1. 데이터 전처리 설명
 whoscored.com과 transfermarkt.com에 올라와 있는 선수데이터가 약간 상이한 부분이 있어 소속팀과 선수이름으로 merge하여 약 2000명의 선수 데이터셋을 구성했습니다.  
