@@ -370,71 +370,194 @@ randomfr_tuning_model.best_params_
 
 ### 3-2. 세분화 분석에 대한 기술적 Summary
 
-> ### 1. 데이터 전처리 설명
-whoscored.com과 transfermarkt.com에 올라와 있는 선수데이터가 약간 상이한 부분이 있어 소속팀과 선수이름으로 merge하여 약 2000명의 선수 데이터셋을 구성했습니다.  
-club 컬럼은 팀명에서 Chapions League 진출팀은 3, Eueropa League 진출팀은 2, 현재 리그 잔류는 1, 현재 리그에서 강등된 팀은 0으로 수치화하여
-변경되었습니다.
-foot, outfitter, position 은 one hotencoding 처리했습니다.
+#### **공격수(Attack) 데이터셋 로드**
+```
+import pickle
+from Library.preprocess import *
 
+with open('datas/attack.pkl', 'rb') as f:
+    attack_df = pickle.load(f)
+
+attack_df = preprocess_df(attack_df)
+```
 <img width="974" alt="스크린샷 2021-06-14 오후 7 30 23" src="https://user-images.githubusercontent.com/53620138/121878706-fd89bf80-cd46-11eb-9bea-add61ca6a9ee.png">
-그 중 600명의 공격수 데이터
-<img width="1004" alt="스크린샷 2021-06-14 오후 7 37 59" src="https://user-images.githubusercontent.com/53620138/121879637-0e870080-cd48-11eb-94a7-4cd68ebdbfbe.png">
+
+- 공격수 데이터프레임을 pickle파일로 불러와 직접 구성한 전처리 함수를 통한 데이터셋 전처리 
 
 ---
+<br/>
 
-> 공격수 포지션의 market_value와 다른 컬럼들간의 상관관계 히트맵
+#### **최종모델에 대한 데이터셋 전처리**
+```
+from sklearn.preprocessing import  StandardScaler
+from sklearn.model_selection import train_test_split
 
-![다운로드 (1)](https://user-images.githubusercontent.com/53620138/121879925-5dcd3100-cd48-11eb-9460-096e77935fec.png)
+model_df = pd.get_dummies(attack_df, columns=['position', 'foot', 'outfitter'])
 
->  Nike, adidas, Puma 외의 class들을 others로 grouping  
-  
-  <img width="1009" alt="스크린샷 2021-06-14 오후 7 41 27" src="https://user-images.githubusercontent.com/53620138/121880064-881eee80-cd48-11eb-81b4-c4689332a696.png">
+dfX0 = model_df.loc[:, 'app':]
+log_dfy = np.log1p(model_df['market_value'])
 
-> foot, position, outfitter 의 분포와 boxplot
+ss = StandardScaler().fit(dfX0.loc[:, "app":"total_out"].values)
+ss_values = ss.transform(dfX0.loc[:, "app":"total_out"].values)
+ss_dfX0 = np.hstack([ss_values , dfX0.loc[:, "position_Centre-Forward":].values])
 
- <img width="997" alt="스크린샷 2021-06-14 오후 7 47 00" src="https://user-images.githubusercontent.com/53620138/121880720-4e021c80-cd49-11eb-9a01-6595e9dfb457.png">
-<img width="1015" alt="스크린샷 2021-06-14 오후 7 47 50" src="https://user-images.githubusercontent.com/53620138/121880832-71c56280-cd49-11eb-9904-2f2a0887b07b.png">
-
-
-> ### 2. 데이터 모델링 설명
-#### 1. 초기모델
-    - 범주형 : 더미변수화
-    - 수치형 : 전처리만 진행
-    - 종속변수 : original
-<img width="1081" alt="스크린샷 2021-06-15 오후 5 08 39" src="https://user-images.githubusercontent.com/53620138/122016813-56fff600-cdfc-11eb-8964-5b5737caa272.png">
-
-#### 2. Standard, MinMax, Robust 모델 비교
-    - 범주형 : 더미변수화
-    - 수치형 : 각 스케일러 적용
-    - 종속변수 : original
-<img width="1086" alt="스크린샷 2021-06-15 오후 5 05 21" src="https://user-images.githubusercontent.com/53620138/122016291-e22cbc00-cdfb-11eb-8b5f-840ee89d2e1d.png">
-
-#### 3. 종속변수에 log scaling을 진행한 모델
-    - 범주형 : 더미변수화
-    - 수치형 : Standard Scaler
-    - 종속변수 : log1p Scaler
-<img width="1095" alt="스크린샷 2021-06-15 오후 5 08 51" src="https://user-images.githubusercontent.com/53620138/122016864-654e1200-cdfc-11eb-8100-9357e64f31e3.png">
-
-#### 4. RandomForest Regessor Model, GridSearchCV를 통한 best hyper parameter 추출
-    - model : RandomForest Regressor
-    - 범주형 : 더미변수화
-    - 수치형 : Standard Scaler
-    - 종속변수 : log1p Scaler
-<img width="1093" alt="스크린샷 2021-06-15 오후 5 07 26" src="https://user-images.githubusercontent.com/53620138/122016640-2f109280-cdfc-11eb-80d2-f5c4de40e0fd.png">
-
-#### 6. Pipeline을 이용한 Model 생성
-    - ploynomialFeatures을 이용한 다향회귀 진행 : 삼차항
-    - pipeline : PolynomialFeatures > StandardScaler > RandomForestRegressor
-    - 범주형 : 더미변수화
-    - 수치형 : Standard Scaler
-    - 종속변수 : log1p Scaler
-<img width="1092" alt="스크린샷 2021-06-15 오후 5 10 17" src="https://user-images.githubusercontent.com/53620138/122017107-a34b3600-cdfc-11eb-9d3c-229cf6ff9c9c.png">
-<img width="1090" alt="스크린샷 2021-06-15 오후 5 10 41" src="https://user-images.githubusercontent.com/53620138/122017168-b231e880-cdfc-11eb-89b4-a2e0901f74bf.png">
+train_X, test_X, train_y, test_y = train_test_split(ss_dfX0, log_dfy, test_size=0.3, random_state=3)
+```
+- 범주형 변수에 대해 더미변수화 후 독립변수와 종속변수로 세분화
+- 종속변수는 log scaling, 독립변수는 standard scaling 적용
+- 7:3 비율로 train, test 데이터셋으로 세분화
 
 ---
+<br/>
 
-## <한계점>
+#### **LinearRegression Model**
+```
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 
-- 몸값은 여러시즌에 걸친 선수의 퍼포먼스에 의해 형성되기 때문에, 단일 시즌으로는 정확한 예측이 어려움.
-- 선수의 더 디테일하고 깊이있는 데이터를 수집했다면 더 정확한 결과를 도출해냈을 수 있었을 것으로 예상됨.
-- 통계치가 아닌 좀 더 상세한 시간대별 수치들을 수집할 수 있었으면 더 심도있는 분석이 가능했을것으로 예상되나 해당 데이터를 제공하는 사이트가 없음.
+
+model_log = LinearRegression(fit_intercept=True).fit(train_X, train_y)
+pred_log = model_log.predict(test_X)
+f = np.polyfit(pred_log, test_y, deg=1)
+
+print("log_scaled MSE : ", mean_squared_error(test_y, pred_log))
+print("log_scaled RMSE : ",np.sqrt(mean_squared_error(test_y, pred_log)))
+print("Inverse log한 RMSE : ", np.sqrt(np.sum((((np.exp(test_y) -1) - (np.exp(pred_log) -1))**2)) / len(test_y)))
+print("log_scaled r2-score : ",r2_score(test_y, pred_log))
+
+sns.regplot(x=pred_log, y=test_y)
+plt.title(f"기울기 :{f[0].round(3)}")
+plt.xlabel('Predict', fontsize=15)
+plt.ylabel("Actual", fontsize=15)
+
+plt.show()
+```
+<img width="897" alt="스크린샷 2021-07-31 오후 7 46 57" src="https://user-images.githubusercontent.com/80459520/127737467-b4f1cbc9-9347-4080-ae07-c894312d25b7.png">
+
+- 상수항 추가 후 train셋으로 학습한 모델객체 생성
+- test셋으로 예측값 도출후 ployfit을 통한 예측값과 실제값 사이의 기울기 생성 및 성능도출
+- 예측값과 실제값의 regplot을 통한 Visualization
+
+---
+<br/>
+
+#### **GridSearch를 통한 RandomForest Regressor Model**
+```
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestRegressor
+
+
+# GridSearch Parameter list
+random_params = {'bootstrap': [True, False],
+ 'max_depth': [1,3,5,7,9],
+ 'max_features': ['auto', 'sqrt'],
+ 'min_samples_leaf': [1, 2, 4],
+ 'min_samples_split': [2, 5, 10],
+ 'n_estimators': [200, 400, 600, 800]}
+
+# GridSearch Object
+result = GridSearchCV(
+    RandomForestRegressor(),
+    param_grid=random_params,
+    scoring='neg_mean_squared_error',
+    cv=5,
+    verbose=3)
+
+# Modeling
+result.fit(train_X, train_y)
+
+grid_model = RandomForestRegressor(**result.best_params_).fit(train_X, train_y)
+pred_grid = grid_model.predict(test_X)
+
+print(mean_squared_error(test_y, pred_grid))
+print(np.sqrt(mean_squared_error(test_y, pred_grid)))
+print(r2_score(test_y, pred_grid))
+```
+> MSE, RMSE, R-squared Score 순
+
+<img width="178" alt="스크린샷 2021-07-31 오후 7 53 28" src="https://user-images.githubusercontent.com/80459520/127737642-81b1ebba-3f35-48fb-91e7-1ea386d5a9fc.png">
+
+- GridSearch할 하이퍼 파라미터들의 리스트를 생성
+- GridSearch 객체를 생성한 뒤 학습
+- GridSearch 학습결과의 Best Parameter들로 RandomForestRegressor 객체생성 후 학습
+
+---
+<br/>
+
+#### **Pipeline를 사용한 RandomForest Regressor Model**
+- ploynomialFeatures을 이용한 다향회귀 진행 : 삼차항
+- pipeline : PolynomialFeatures > StandardScaler > RandomForestRegressor
+- GridSearch보다 좀 더 성능이 좋은 HalvingGridSearchCV사용
+```
+import os
+from sklearn.experimental import enable_halving_search_cv
+from sklearn.model_selection import HalvingGridSearchCV
+
+
+# Pipeline 구성 및 객체생성
+pipe = Pipeline([
+    ('ploy', PolynomialFeatures(degree=3)),
+    ('scaler', StandardScaler()),
+    ('rf', RandomForestRegressor())
+])
+
+# GridSearch Parameter list
+pipe_params = {
+    'ploy__degree': [3],
+    'rf__bootstrap': [True],
+    'rf__max_features': ['auto', 'sqrt'],
+    'rf__min_samples_leaf': [2, 4, 8],
+    'rf__min_samples_split': [2, 4, 8],
+    'rf__n_estimators': [200, 1000]
+}
+
+# Pipeline 객체의 HalvingGridSearch 학습
+pipe_grid = HalvingGridSearchCV(pipe, param_grid=pipe_params, verbose=2, n_jobs=os.cpu_count()-2, scoring="roc_auc", min_resources="exhaust", cv=3)
+pipe_grid.fit(train_X, train_y)
+
+pipe_grid.best_params_
+```
+> Pipeline GridSearch의 Best Parameter
+
+<img width="244" alt="스크린샷 2021-07-31 오후 8 18 23" src="https://user-images.githubusercontent.com/80459520/127738218-2518a9d8-1a7e-48a2-9409-11d8e1169cbc.png">
+
+- Pipeline을 통해 다차항 독립변수에 대한 모델링 진행
+- GridSearch할 파라미터들을 구성 후 최대 CPU에서 2개를 뺀 개수로 HashGridSearch 진행 후 Best Parameter 조합 도출
+
+---
+<br/>
+
+# 💡 제언 및 한계점
+```
+- 데이터의 차원이 높아질수록 성능은 좋아지지만 그 만큼의 연산량이 증가할 뿐더러 중요 요인을 파악할 때에 어려움이 있을 수 있기애 문제정의 단계에서 프로젝트의 목표를 잘 설정하고 목표지향적으로 그에 맞는 분석을 해야한다고 생각합니다.
+
+- 베이스라인을 잡고 분석하여 데이터 전반적인 인사이트와 목적에 맞는 중요 요인을 도출하고, 데이터 세분화를 통해 집요하게 분석하는 과정이 중요하다고 생각합니다.
+
+
+<한계점>
+- 현재가치는 여러시즌에 걸친 선수의 퍼포먼스에 의해 형성되기 때문에, 단일 시즌으로는 정확한 예측이 어려웠습니다.
+
+- 선수의 더 디테일하고 깊이있는 데이터를 수집했다면 더 정확한 결과를 도출해냈을 수 있었을 것으로 예상됩니다.
+
+- 통계치가 아닌 좀 더 상세한 시간대별 수치들을 수집할 수 있었으면 더 심도있는 분석이 가능했을것으로 예상되나 해당 데이터를 제공하는 사이트가 없었습니다.
+```
+
+<br/>
+
+# Code Explanation
+- 베이스라인 : 모든 포지션에 대한 EDA 및 모델링
+  - > [all_position_EDA.ipynb](https://github.com/dss-17th/reg-repo-8/blob/main/all_position/all_position_EDA.ipynb) : 베이스라인 EDA Notebook
+  - > [all_position_modeling.ipynb](https://github.com/dss-17th/reg-repo-8/blob/main/all_position/all_position_modeling.ipynb) : 베이스라인 Modeling Notebook
+
+- 데이터 세분화 후 분석 : 각 포지션에 대한 EDA 및 모델링
+  - > [EDA_each_position.ipynb](https://github.com/dss-17th/reg-repo-8/blob/main/EDA_each_position.ipynb) : 각 포지션에 대한 EDA Notebook
+  - > [modeling_attack.ipynb](https://github.com/dss-17th/reg-repo-8/blob/main/modeling_attack.ipynb) : 공격수에 대한 Modeling Notebook
+  - > [modeling_midfield.ipynb](https://github.com/dss-17th/reg-repo-8/blob/main/modeling_midfield.ipynb) : 미드필더에 대한 Modeling Notebook
+  - > [modeling_defender.ipynb](https://github.com/dss-17th/reg-repo-8/blob/main/modeling_defender.ipynb) : 수비수에 대한 Modeling Notebook
+
+- 모듈 파일 및 크롤링 코드
+  - > [preprocess.py](https://github.com/dss-17th/reg-repo-8/blob/main/Library/preprocess.py) : raw dataset을 모델링을 위한 dataset으로 전처리해주는 모듈
+  - > [crawl_transfer.py](https://github.com/dss-17th/reg-repo-8/blob/main/Library/crawl_transfer.py) : 5대 리그 선수들의 현재가치 및 정보 크롤링 모듈
+  - > [transfer_run.py](https://github.com/dss-17th/reg-repo-8/blob/main/transfer_run.py) : crawl_transfer module을 import하여 크롤링을 수행하는 코드
+  - > [crawl_whoscored.py](https://github.com/dss-17th/reg-repo-8/blob/main/Library/crawl_whoscored.py) : 5대 리그 선수들의 경기정보 크롤링 모듈
+  - > [whoscored_run.py](https://github.com/dss-17th/reg-repo-8/blob/main/whoscored_run.py) : crawl_whoscored module을 import하여 크롤링을 수행하는 코드
